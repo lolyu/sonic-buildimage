@@ -828,6 +828,9 @@ sudo LANG=C cp $SCRIPTS_DIR/sonic-netns-exec $FILESYSTEM_ROOT/usr/bin/sonic-netn
 # Copy write_standby script for mux state
 sudo LANG=C cp $SCRIPTS_DIR/write_standby.py $FILESYSTEM_ROOT/usr/local/bin/write_standby.py
 
+# Copy grpc_route_cfg script for grpc traffic route
+sudo LANG=C cp $SCRIPTS_DIR/grpc_route_cfg.py $FILESYSTEM_ROOT/usr/local/bin/grpc_route_cfg.py
+
 # Copy mark_dhcp_packet script
 sudo LANG=C cp $SCRIPTS_DIR/mark_dhcp_packet.py $FILESYSTEM_ROOT/usr/local/bin/mark_dhcp_packet.py
 

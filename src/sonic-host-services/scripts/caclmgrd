@@ -310,6 +310,24 @@ class ControlPlaneAclManager(daemon_base.DaemonBase):
 
         return allow_internal_docker_ip_cmds
 
+    def generate_mark_traffic_from_host_to_soc(self, namespace):
+
+        mark_host_to_soc_cmds = []
+
+        if self.DualToR:
+            grpc_port = 50075
+            mark_host_to_soc_cmds.append(
+                self.iptables_cmd_ns_prefix[namespace] + "iptables -t mangle --flush OUTPUT"
+            )
+            mux_cables = self.config_db_map[DEFAULT_NAMESPACE].get_table(self.CONFIG_MUX_CABLE)
+            for mux_config in mux_cables.values():
+                if mux_config.get("cable_type") == "active-active":
+                    mark_host_to_soc_cmds.append(
+                        self.iptables_cmd_ns_prefix[namespace] +
+                        f"iptables -t mangle -A OUTPUT -p tcp --dport {grpc_port} --destination {mux_config['soc_ipv4']} -j MARK --set-mark {grpc_port}"
+                    )
+
+        return mark_host_to_soc_cmds
 
     def generate_fwd_traffic_from_host_to_soc(self, namespace):
 
@@ -739,6 +757,7 @@ class ControlPlaneAclManager(daemon_base.DaemonBase):
         self.run_commands(iptables_cmds)
 
         self.update_control_plane_nat_acls(namespace, service_to_source_ip_map)
+        self.update_control_plane_mangle_acls(namespace, service_to_source_ip_map)
 
     def update_control_plane_nat_acls(self, namespace, service_to_source_ip_map):
         """
@@ -762,6 +781,20 @@ class ControlPlaneAclManager(daemon_base.DaemonBase):
                 self.log_info("  " + cmd)
             self.run_commands(dualtor_iptables_cmds)
 
+    def update_control_plane_mangle_acls(self, namespace, service_to_source_ip_map):
+        """
+        Convenience wrapper for multi-asic platforms
+        which programs the mangle rules for setting specific
+        headers for control plane traffic to affect the routing
+        decisions further on.
+        """
+        iptables_cmds = self.generate_mark_traffic_from_host_to_soc(namespace)
+
+        self.log_info("Issuing the following iptables commands:")
+        for cmd in iptables_cmds:
+            self.log_info("  " + cmd)
+
+        self.run_commands(iptables_cmds)
 
     def check_and_update_control_plane_acls(self, namespace, num_changes):
         """

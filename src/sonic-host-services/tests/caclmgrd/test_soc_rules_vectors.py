@@ -30,7 +30,8 @@ CACLMGRD_SOC_TEST_VECTOR = [
                 },
             },
             "expected_subprocess_calls": [
-                call("iptables -t nat -A POSTROUTING --destination 192.168.1.0/32 -j SNAT --to-source 10.10.10.10",shell=True, universal_newlines=True, stdout=-1)
+                call("iptables -t nat -A POSTROUTING --destination 192.168.1.0/32 -j SNAT --to-source 10.10.10.10",shell=True, universal_newlines=True, stdout=-1),
+                call("iptables -t mangle -A OUTPUT -p tcp --dport 50075 --destination 192.168.1.0/32 -j MARK --set-mark 50075",shell=True, universal_newlines=True, stdout=-1)
             ],
             "popen_attributes": {
                 'communicate.return_value': ('output', 'error'),
